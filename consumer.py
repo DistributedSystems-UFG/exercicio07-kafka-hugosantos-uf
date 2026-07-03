@@ -1,19 +1,45 @@
-from kafka import KafkaConsumer
+from kafka import KafkaConsumer, KafkaProducer
 from const import *
 import sys
-
-# Create consumer: Option 1 -- only consume new events
-consumer = KafkaConsumer(bootstrap_servers=[BROKER_ADDR + ':' + BROKER_PORT])
-
-# Create consumer: Option 2 -- consume old events (uncomment to test -- and comment Option 1 above)
-#consumer = KafkaConsumer(bootstrap_servers=[BROKER_ADDR + ':' + BROKER_PORT], auto_offset_reset='earliest')
+import json
+from datetime import datetime, timezone
 
 try:
-  topic = sys.argv[1]
+    input_topic = sys.argv[1]
 except:
-  print ('Usage: python3 consumer <topic_name>')
-  exit(1)
-  
-consumer.subscribe([topic])
+    input_topic = TOPIC_1
+
+try:
+    output_topic = sys.argv[2]
+except:
+    output_topic = TOPIC_2
+
+consumer = KafkaConsumer(
+    input_topic,
+    bootstrap_servers=[BROKER_ADDR + ':' + BROKER_PORT],
+    auto_offset_reset='earliest',
+    group_id='event-processor',
+    value_deserializer=lambda value: json.loads(value.decode())
+)
+
+producer = KafkaProducer(
+    bootstrap_servers=[BROKER_ADDR + ':' + BROKER_PORT],
+    value_serializer=lambda value: json.dumps(value).encode()
+)
+
+print('Processing events from ' + input_topic + ' and publishing to ' + output_topic)
+
 for msg in consumer:
-    print (msg.value)
+    event = msg.value
+    processed_event = {
+        'id': event['id'],
+        'type': 'processed_event',
+        'original_value': event['value'],
+        'processed_value': event['value'] * 2,
+        'source_topic': msg.topic,
+        'processed_at': datetime.now(timezone.utc).isoformat()
+    }
+
+    print('Processed event: ' + str(processed_event))
+    producer.send(output_topic, value=processed_event)
+    producer.flush()

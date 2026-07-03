@@ -59,12 +59,23 @@ source myvenv/bin/activate
 pip3 install kafka-python
 ```
 
-### Run the Producer on one machine
+### Run the final consumer for topic2
 ```
-python3 producer <topic_name>
+python3 consumer_topic2.py topic2
 ```
 
-### Run the Client on another machine
+### Run the processing consumer for topic1 and producer for topic2
 ```
-python3 consumer <topic_name>
+python3 consumer.py topic1 topic2
+```
+
+### Run the producer for topic1
+```
+python3 producer.py topic1
+```
+
+This implements the requested flow:
+
+```
+producer(topic1) --> consumer(topic1)/producer(topic2) --> consumer(topic2)
 ```

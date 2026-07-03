@@ -1,2 +1,4 @@
 BROKER_ADDR = '172.31.91.151'
 BROKER_PORT = '9092'
+TOPIC_1 = 'topic1'
+TOPIC_2 = 'topic2'

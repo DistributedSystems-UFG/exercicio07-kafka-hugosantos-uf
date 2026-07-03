@@ -1,17 +1,27 @@
 from kafka import KafkaProducer
 from const import *
 import sys
+import json
+from datetime import datetime, timezone
 
 try:
     topic = sys.argv[1]
 except:
-    print ('Usage: python3 producer <topic_name>')
-    exit(1)
+    topic = TOPIC_1
     
-producer = KafkaProducer(bootstrap_servers=[BROKER_ADDR + ':' + BROKER_PORT])
+producer = KafkaProducer(
+    bootstrap_servers=[BROKER_ADDR + ':' + BROKER_PORT],
+    value_serializer=lambda value: json.dumps(value).encode()
+)
+
 for i in range(100):
-    msg = 'My ' + str(i) + 'st message for topic ' + topic
-    print ('Sending message: ' + msg)
-    producer.send(topic, value=msg.encode())
+    event = {
+        'id': i,
+        'type': 'raw_event',
+        'value': i,
+        'created_at': datetime.now(timezone.utc).isoformat()
+    }
+    print('Sending event: ' + str(event))
+    producer.send(topic, value=event)
 
 producer.flush()
